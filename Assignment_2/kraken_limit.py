@@ -1,5 +1,8 @@
 # Get all asset balances.
-
+"""
+this is same with the kraken_get.py file, but it is modified to make multiple requests to test
+out the rate limit of the Kraken API. 
+"""
 import http.client
 import urllib.request
 import urllib.parse
@@ -9,19 +12,23 @@ import base64
 import json
 import time
 
-#main function to place a sell request and print the response.
-
 def main():
-   response = request(
-      method="POST",
-      path="/0/private/Balance",
-      public_key="",
-      private_key="",
-      environment="https://api.kraken.com",
-   )
-   print(response.read().decode())
-#the full http request is made here with the method, path, query, body, public key, private key and environment.
-#it also returns an HTTPResponse object that contains the server reply.
+   call_count = 0 # Initialize call count to track the number of API calls
+   while True: # Loop to make multiple requests
+    response = request(
+        method="POST",
+        path="/0/private/Balance",
+        public_key="",
+        private_key="",
+        environment="https://api.kraken.com",
+    )
+    print(response.read().decode())
+    call_count += 1
+    time.sleep(0.1)  # Sleep timer for 0.1 seconds
+    if "EAPI:Rate limit exceeded" in response.read().decode():
+       break # Break the loop if rate limit exceeded
+
+
 def request(method: str = "GET", path: str = "", query: dict | None = None, body: dict | None = None, public_key: str = "", private_key: str = "", environment: str = "") -> http.client.HTTPResponse:
    url = environment + path
    query_str = ""
@@ -53,10 +60,8 @@ def request(method: str = "GET", path: str = "", query: dict | None = None, body
    return urllib.request.urlopen(req)
 
 def get_nonce() -> str:
-   return str(int(time.time() * 1000)) #counts the time used for each API calls 
+   return str(int(time.time() * 1000))
 
-
-#this function generates a signature for the request and cross checks to prove that you are the owner of the private key.
 def get_signature(private_key: str, data: str, nonce: str, path: str) -> str:
    return sign(
       private_key=private_key,
@@ -65,7 +70,7 @@ def get_signature(private_key: str, data: str, nonce: str, path: str) -> str:
          .encode()
       ).digest()
    )
-#secret key is decoded here and an API-Sign header is generated using HMAC-SHA512.
+
 def sign(private_key: str, message: bytes) -> str:
    return base64.b64encode(
       hmac.new(

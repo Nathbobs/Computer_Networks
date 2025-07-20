@@ -9,13 +9,14 @@ import base64
 import json
 import time
 
+# Main function to place a sell request and print the response.
 def main():
    response = request(
       method="POST",
       path="/0/private/AddOrder",
       body={
          "ordertype": "limit",
-         "type": "buy",
+         "type": "sell",
          "volume": "1",
          "pair": "BTC/USD",
          "price": "1",
@@ -27,8 +28,10 @@ def main():
       private_key="",
       environment="https://api.kraken.com",
    )
-   print(response.read().decode())
+   print(response.read().decode()) # Print the response from the server
 
+
+# The full HTTP request is made here with the method, path, query, body, public key, private key and environment.
 def request(method: str = "GET", path: str = "", query: dict | None = None, body: dict | None = None, public_key: str = "", private_key: str = "", environment: str = "") -> http.client.HTTPResponse:
    url = environment + path
    query_str = ""
@@ -60,9 +63,10 @@ def request(method: str = "GET", path: str = "", query: dict | None = None, body
    return urllib.request.urlopen(req)
 
 def get_nonce() -> str:
-   return str(int(time.time() * 1000))
+   return str(int(time.time() * 1000)) # Counts the time used for each API call
 
-def get_signature(private_key: str, data: str, nonce: str, path: str) -> str:
+# This function generates a signature for the request and cross-checks to prove that you are the owner of the private key.
+def get_signature(private_key: str, data: str, nonce: str, path: str) -> str: 
    return sign(
       private_key=private_key,
       message=path.encode() + hashlib.sha256(
@@ -71,6 +75,7 @@ def get_signature(private_key: str, data: str, nonce: str, path: str) -> str:
       ).digest()
    )
 
+##secret key is decoded here and an API-Sign header is generated using HMAC-SHA512.
 def sign(private_key: str, message: bytes) -> str:
    return base64.b64encode(
       hmac.new(
